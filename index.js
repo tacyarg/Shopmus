@@ -20,8 +20,11 @@ Promise.props({
   // const runCommand = ChatCommands(libs)
 
   const SubmitOpening = function (opening) {
-    // console.log(opening)
     const price = opening.item.suggested_price_floor / 100
+
+    console.log(opening.id, opening.item.name, price)
+
+    if(price < 10) return
     return libs.discord.sendMessageToChannelName('case-site', `
       A user named **${opening.user.username}** unboxed a **${opening.item.name}** worth **$${price.toFixed(2)}** from **Case #${opening.case_id}** on VGODogg.com!
     `)
@@ -32,8 +35,13 @@ Promise.props({
     libs.socket.on('diff', state.patch)
     return state
   }).then(serverState => {
+
     const sendOpening = lodash.debounce(SubmitOpening, 100)
-    serverState.on('recentOpenings', openings => sendOpening(openings[0]))
+    serverState.on('recentOpenings', openings => {
+      var box = openings[0]
+      sendOpening(box)
+    })
+  
   })
 
   // replicate chat messages to discord/slack
