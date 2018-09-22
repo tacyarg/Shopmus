@@ -7,6 +7,7 @@ A universal slack/discord bot to easily support user commands and server events.
 ```
 SLACK_TOKEN=
 DISCORD_TOKEN=
+SOCKET_URL=
 ```
 
 ## Deployment

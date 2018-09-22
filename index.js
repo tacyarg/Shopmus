@@ -17,6 +17,7 @@ Promise.props({
   slack: Slack(CONFIG.slack)
 }).then(libs => {
   console.log('App initalized!')
+  // const runCommand = ChatCommands(libs)
 
   const SubmitOpening = function (opening) {
     // console.log(opening)
@@ -35,8 +36,6 @@ Promise.props({
     serverState.on('recentOpenings', openings => sendOpening(openings[0]))
   })
 
-  // const runCommand = ChatCommands(libs)
-
   // replicate chat messages to discord/slack
   // libs.state.on(['chats', 'en'], function (state, value, key) {
   //   var chat = value.chat[0];
@@ -45,8 +44,6 @@ Promise.props({
   //     libs.slack.sendMessageToChannelName('site-chat', `*${chat.user.username}:* ${chat.message}`)
   //   ])
   // })
-
-
 
   // listen for !cmds
   libs.slack.on('newCommand', message => {
