@@ -27,7 +27,6 @@ Promise.props({
     if (price < 5) return;
     return libs.discord.sendMessageToChannelName("case-site", {
       embed: {
-        // color: opening.item.color,
         author: {
           name: opening.user.username,
           icon_url: opening.user.avatarurl
@@ -36,7 +35,9 @@ Promise.props({
         url: "http://vgodogg.com",
         description: `A **${
           opening.item.category
-        }** has just been unboxed from **case #${opening.case_id}** on vgodogg.com!`,
+        }** has just been unboxed from **case #${
+          opening.case_id
+        }** on vgodogg.com!`,
         fields: [
           {
             name: "Name",
@@ -51,9 +52,6 @@ Promise.props({
             value: `${opening.item.wear}`
           }
         ],
-        // thumbnail: {
-        //   url: opening.item.image["300px"]
-        // },
         image: {
           url: opening.item.preview_urls
             ? opening.item.preview_urls.front_image
