@@ -24,7 +24,7 @@ Promise.props({
 
     console.log(opening.id, opening.item.name, price);
 
-    // if (price < 10) return;
+    if (price < 5) return;
     return libs.discord.sendMessageToChannelName("case-site", {
       embed: {
         // color: opening.item.color,
