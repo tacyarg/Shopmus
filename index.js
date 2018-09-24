@@ -7,77 +7,132 @@ const lodash = require("lodash");
 const ServerSocket = require("./lib/socket");
 const Discord = require("./lib/discord");
 const Slack = require("./lib/slack");
+const Twitter = require("./lib/twitter");
 const ChatCommands = require("./lib/chatCommands");
 
 const CONFIG = utils.envToConfig(process.env);
 
 Promise.props({
-  socket: ServerSocket(CONFIG.socket),
-  discord: Discord(CONFIG.discord),
-  slack: Slack(CONFIG.slack)
+  twitter: Twitter(CONFIG.twitter),
+  discord: Discord(CONFIG.discord)
+  // socket: ServerSocket(CONFIG.socket),
+  // slack: Slack(CONFIG.slack)
 }).then(libs => {
   console.log("App initalized!");
   // const runCommand = ChatCommands(libs)
 
-  const SubmitOpening = function(opening) {
-    const price = opening.item.suggested_price_floor / 100;
+  const FOLLOW_ACCOUNTS = [
+    "988574835449171970",
+    "897652496461680640",
+    "2920047010"
+  ];
+  const TRACK_TERMS = ["vgo_gg", "wax_io", "opskinsgo"];
 
-    console.log(opening.id, opening.item.name, price);
+  const stream = libs.twitter.stream("statuses/filter", {
+    follow: FOLLOW_ACCOUNTS.toString()
+  });
+  stream.on("data", function(event) {
+    console.log(event);
+    SubmitTwitterEvent(event);
+  });
 
-    if (price < 5) return;
-    return libs.discord.sendMessageToChannelName("case-site", {
+  const SubmitTwitterEvent = event => {
+    var { id_str, user, text, in_reply_to_screen_name } = event;
+
+    if (!FOLLOW_ACCOUNTS.includes(user.id_str)) return;
+
+    return libs.discord.sendMessageToChannelName("twitter-feed", {
       embed: {
         author: {
-          name: opening.user.username,
-          icon_url: opening.user.avatarurl
+          name: user.screen_name,
+          icon_url: user.profile_image_url_https
         },
-        title: "VGODogg.com Case Opening",
-        url: "http://vgodogg.com",
-        description: `A **${
-          opening.item.category
-        }** has just been unboxed from **case #${
-          opening.case_id
-        }** on vgodogg.com!`,
-        fields: [
-          {
-            name: "Name",
-            value: opening.item.name
-          },
-          {
-            name: "Value",
-            value: `$${price.toFixed(2)}`
-          },
-          {
-            name: "Wear",
-            value: `${opening.item.wear}`
-          }
-        ],
-        image: {
-          url: opening.item.preview_urls
-            ? opening.item.preview_urls.front_image
-            : opening.item.image["300px"],
-          height: 100
-        }
+        title: "Tweet",
+        url: `https://twitter.com/${user.screen_name}/status/${id_str}`,
+        description: text
+        // fields: [
+        //   {
+        //     name: "Name",
+        //     value: opening.item.name
+        //   },
+        //   {
+        //     name: "Value",
+        //     value: `$${price.toFixed(2)}`
+        //   },
+        //   {
+        //     name: "Wear",
+        //     value: `${opening.item.wear}`
+        //   }
+        // ],
+        // image: {
+        //   url: opening.item.preview_urls
+        //     ? opening.item.preview_urls.front_image
+        //     : opening.item.image["300px"],
+        //   height: 100
+        // }
       }
     });
   };
 
-  libs.socket
-    .callAction("getServerState")
-    .then(state => {
-      state = Statesync(state);
-      libs.socket.on("diff", state.patch);
-      return state;
-    })
-    .then(serverState => {
-      const sendOpening = lodash.debounce(SubmitOpening, 100);
-      serverState.on("recentOpenings", openings => {
-        var box = openings[0];
-        sendOpening(box);
-      });
+  // const SubmitOpening = function(opening) {
+  //   const price = opening.item.suggested_price_floor / 100;
 
-      // SubmitOpening(fakeOpening);
-    });
+  //   console.log(opening.id, opening.item.name, price);
+
+  //   if (price < 5) return;
+  //   return libs.discord.sendMessageToChannelName("case-site", {
+  //     embed: {
+  //       author: {
+  //         name: opening.user.username,
+  //         icon_url: opening.user.avatarurl
+  //       },
+  //       title: "VGODogg.com Case Opening",
+  //       url: "http://vgodogg.com",
+  //       description: `A **${
+  //         opening.item.category
+  //       }** has just been unboxed from **case #${
+  //         opening.case_id
+  //       }** on vgodogg.com!`,
+  //       fields: [
+  //         {
+  //           name: "Name",
+  //           value: opening.item.name
+  //         },
+  //         {
+  //           name: "Value",
+  //           value: `$${price.toFixed(2)}`
+  //         },
+  //         {
+  //           name: "Wear",
+  //           value: `${opening.item.wear}`
+  //         }
+  //       ],
+  //       image: {
+  //         url: opening.item.preview_urls
+  //           ? opening.item.preview_urls.front_image
+  //           : opening.item.image["300px"],
+  //         height: 100
+  //       }
+  //     }
+  //   });
+  // };
+
+  // libs.socket
+  //   .callAction("getServerState")
+  //   .then(state => {
+  //     state = Statesync(state);
+  //     libs.socket.on("diff", state.patch);
+  //     return state;
+  //   })
+  //   .then(serverState => {
+  //     const sendOpening = lodash.debounce(SubmitOpening, 100);
+  //     serverState.on("recentOpenings", openings => {
+  //       var box = openings[0];
+  //       sendOpening(box);
+  //     });
+
+  //     // SubmitOpening(fakeOpening);
+  //   });
 
   // replicate chat messages to discord/slack
   // libs.state.on(['chats', 'en'], function (state, value, key) {
@@ -89,64 +144,11 @@ Promise.props({
   // })
 
   // listen for !cmds
-  libs.slack.on("newCommand", message => {
-    return runCommand(message.text)
-      .then(formattedMessage => {
-        return libs.slack.sendMessage(formattedMessage, message.channel);
-      })
-      .catch(err => console.error(err.message));
-  });
+  // libs.slack.on("newCommand", message => {
+  //   return runCommand(message.text)
+  //     .then(formattedMessage => {
+  //       return libs.slack.sendMessage(formattedMessage, message.channel);
+  //     })
+  //     .catch(err => console.error(err.message));
+  // });
 });
-
-const fakeOpening = {
-  case_id: 2,
-  case_site_trade_offer_id: 1501960,
-  created: 1532473746197,
-  done: true,
-  id: 725070,
-  item: {
-    category: "Mil-Spec SMG",
-    color: "#4b69ff",
-    eth_inspect: null,
-    id: 2123338,
-    image: {
-      "300px":
-        "https://files.opskins.media/file/vgo-img/item/mp9-red-camo-battle-scarred-300.png",
-      "600px":
-        "https://files.opskins.media/file/vgo-img/item/mp9-red-camo-battle-scarred-600.png"
-    },
-    inspect: null,
-    internal_app_id: 1,
-    name: "MP9 | Red Camo (Battle-Scarred)",
-    paint_index: null,
-    pattern_index: 450,
-    preview_urls: {
-      back_image:
-        "https://files.opskins.media/file/vgo-img/previews/1702325_back.jpg",
-      front_image:
-        "https://files.opskins.media/file/vgo-img/previews/1702325_front.jpg",
-      thumb_image:
-        "https://files.opskins.media/file/vgo-img/previews/1702282_thumb.jpg",
-      video:
-        "https://files.opskins.media/file/vgo-img/previews/1702325_video.webm"
-    },
-    rarity: "Mil-Spec",
-    sku: 130,
-    suggested_price: 2,
-    suggested_price_floor: 2,
-    trade_hold_expires: null,
-    type: "SMG",
-    wear: 0.62602359056473
-  },
-  status: 3,
-  status_text: "Opened",
-  updated: 1532473746197,
-  user: {
-    avatarurl:
-      "https://steamcdn-a.opskins.media/steamcommunity/public/images/avatars/57/573f45615e0fe0e8dcbcd835538fa404994f5529.jpg",
-    id: "f7c60cf1-ff27-4938-8b83-620a2e6a8c5a",
-    steamid: "76561198403312375",
-    username: "tacyarg"
-  },
-  userid: "f7c60cf1-ff27-4938-8b83-620a2e6a8c5a"
-};
