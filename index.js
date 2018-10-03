@@ -19,7 +19,7 @@ Promise.props({
   console.log("App initalized!");
   // const runCommand = ChatCommands(libs)
 
-  const SubmitOpening = function(opening) {
+  const SubmitOpening = function (opening) {
     const price = opening.item.suggested_price_floor / 100;
 
     console.log(opening.id, opening.item.name, price);
@@ -35,9 +35,9 @@ Promise.props({
         url: "http://vgodogg.com",
         description: `A **${
           opening.item.category
-        }** has just been unboxed from **case #${
+          }** has just been unboxed from **case #${
           opening.case_id
-        }** on vgodogg.com!`,
+          }** on vgodogg.com!`,
         fields: [
           {
             name: "Name",
