@@ -14,7 +14,7 @@ const CONFIG = utils.envToConfig(process.env);
 Promise.props({
   socket: ServerSocket(CONFIG.socket),
   discord: Discord(CONFIG.discord),
-  slack: Slack(CONFIG.slack)
+  // slack: Slack(CONFIG.slack)
 }).then(libs => {
   console.log("App initalized!");
   // const runCommand = ChatCommands(libs)
@@ -89,13 +89,13 @@ Promise.props({
   // })
 
   // listen for !cmds
-  libs.slack.on("newCommand", message => {
-    return runCommand(message.text)
-      .then(formattedMessage => {
-        return libs.slack.sendMessage(formattedMessage, message.channel);
-      })
-      .catch(err => console.error(err.message));
-  });
+  // libs.slack.on("newCommand", message => {
+  //   return runCommand(message.text)
+  //     .then(formattedMessage => {
+  //       return libs.slack.sendMessage(formattedMessage, message.channel);
+  //     })
+  //     .catch(err => console.error(err.message));
+  // });
 });
 
 const fakeOpening = {
