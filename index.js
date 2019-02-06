@@ -21,23 +21,18 @@ Promise.props({
 
   const SubmitOpening = function (opening) {
     const price = opening.item.suggested_price_floor / 100;
-
     console.log(opening.id, opening.item.name, price);
 
-    if (price < 5) return;
-    return libs.discord.sendMessageToChannelName("case-site", {
+    if (price < 25) return;
+    return libs.discord.sendMessageToChannelName("bigwins", {
       embed: {
         author: {
           name: opening.user.username,
-          icon_url: opening.user.avatarurl
+          icon_url: opening.user.avatar
         },
-        title: "VGODogg.com Case Opening",
-        url: "http://vgodogg.com",
-        description: `A **${
-          opening.item.category
-          }** has just been unboxed from **case #${
-          opening.case_id
-          }** on vgodogg.com!`,
+        title: opening.item.name,
+        url: "https://vgodogg.com",
+        description: `A item named "${opening.item.name}" worth $${price.toFixed(2)} was just unboxed on vgodogg.com!`,
         fields: [
           {
             name: "Name",
@@ -47,10 +42,10 @@ Promise.props({
             name: "Value",
             value: `$${price.toFixed(2)}`
           },
-          {
-            name: "Wear",
-            value: `${opening.item.wear}`
-          }
+          // {
+          //   name: "Wear",
+          //   value: `${opening.item.wear}`
+          // }
         ],
         image: {
           url: opening.item.preview_urls
@@ -63,7 +58,7 @@ Promise.props({
   };
 
   libs.socket
-    .callAction("getServerState")
+    .callAction("publicState")
     .then(state => {
       state = Statesync(state);
       libs.socket.on("diff", state.patch);
@@ -71,7 +66,7 @@ Promise.props({
     })
     .then(serverState => {
       const sendOpening = lodash.debounce(SubmitOpening, 100);
-      serverState.on("recentOpenings", openings => {
+      serverState.on("recentVCaseOpenings", openings => {
         var box = openings[0];
         sendOpening(box);
       });
